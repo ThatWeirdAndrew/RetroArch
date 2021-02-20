@@ -1279,6 +1279,8 @@ static struct config_path_setting *populate_settings_path(
          settings->paths.path_core_options, false, NULL, true);
    SETTING_PATH("libretro_info_path",
          settings->paths.path_libretro_info, false, NULL, true);
+   SETTING_PATH("video_shader",
+         settings->paths.path_shader, false, NULL, true);
    SETTING_PATH("content_database_path",
          settings->paths.path_content_database, false, NULL, true);
    SETTING_PATH("cheat_database_path",
@@ -2443,6 +2445,7 @@ void config_set_defaults(void *data)
    *settings->paths.path_content_music_history   = '\0';
    *settings->paths.path_content_video_history   = '\0';
    *settings->paths.path_cheat_settings    = '\0';
+   *settings->paths.path_shader   = '\0';
 #ifndef IOS
    *settings->arrays.bundle_assets_src = '\0';
    *settings->arrays.bundle_assets_dst = '\0';
@@ -4378,6 +4381,10 @@ bool config_save_overrides(enum override_type type, void *data)
 
       for (i = 0; i < (unsigned)path_settings_size; i++)
       {
+         /* blacklist video_shader, better handled by shader presets*/
+         if (string_is_equal(path_settings[i].ident, "video_shader"))
+            continue;
+
          if (!string_is_equal(path_settings[i].ptr, path_overrides[i].ptr))
             config_set_path(conf, path_overrides[i].ident,
                   path_overrides[i].ptr);

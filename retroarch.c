@@ -2134,7 +2134,8 @@ int generic_menu_entry_action(
                   entry->label, entry->type, i, entry->entry_idx);
          break;
       case MENU_ACTION_SEARCH:
-         menu_input_dialog_start_search();
+         // disable search action
+         // menu_input_dialog_start_search();
          break;
       case MENU_ACTION_SCAN:
          if (cbs && cbs->action_scan)
@@ -35913,6 +35914,7 @@ static bool retroarch_load_shader_preset_internal(
       const char *core_name,
       const char *special_name)
 {
+   settings_t *settings = p_rarch->configuration_settings;
    unsigned i;
    char shader_path[PATH_MAX_LENGTH];
 
@@ -35940,11 +35942,12 @@ static bool retroarch_load_shader_preset_internal(
          if (string_is_empty(special_name))
             break;
 
-         fill_pathname_join(shader_path, shader_directory,
-               special_name, sizeof(shader_path));
-         strlcat(shader_path,
-               video_shader_get_preset_extension(types[i]),
-               sizeof(shader_path));
+         if (strcmp(special_name, "config")!=0) {
+            fill_pathname_join(shader_path, shader_directory, special_name, PATH_MAX_LENGTH);
+            strlcat(shader_path, video_shader_get_preset_extension(types[i]), PATH_MAX_LENGTH);
+         } else {
+            strlcpy(shader_path, settings->paths.path_shader, PATH_MAX_LENGTH);
+         }
       }
 
       if (!path_is_valid(shader_path))
@@ -35966,6 +35969,7 @@ static bool retroarch_load_shader_preset_internal(
  * Tries to load a supported core-, game-, folder-specific or global
  * shader preset from its respective location:
  *
+ * config:          preset from the configuration file, configured via 'video_shader'
  * global:          $CONFIG_DIR/global.$PRESET_EXT
  * core-specific:   $CONFIG_DIR/$CORE_NAME/$CORE_NAME.$PRESET_EXT
  * folder-specific: $CONFIG_DIR/$CORE_NAME/$FOLDER_NAME.$PRESET_EXT
@@ -36078,6 +36082,15 @@ static bool retroarch_load_shader_preset(struct rarch_state *p_rarch)
 #ifdef DEBUG
          RARCH_LOG("[Shaders]: global shader preset found.\n");
 #endif
+         break;
+      }
+
+      ret = retroarch_load_shader_preset_internal(p_rarch,
+            dirs[i], NULL,
+            "config");
+
+      if (ret) {
+         RARCH_LOG("[Shaders]: configuration file shader preset found.\n");
          break;
       }
    }
